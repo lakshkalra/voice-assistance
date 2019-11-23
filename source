@@ -1,0 +1,145 @@
+import pyttsx3 #pip install pyttsx3
+import speech_recognition as sr #pip install speechRecognition
+import datetime
+import wikipedia #pip install wikipedia
+import webbrowser
+import os
+import smtplib
+
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+# print(voices[1].id)
+engine.setProperty('voice', voices[1].id)
+
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+#check the time and according to that gives greeting
+def wishMe():
+    hour = int(datetime.datetime.now().hour)
+    if hour>=0 and hour<12:
+        speak("Good Morning!")
+
+    elif hour>=12 and hour<18:
+        speak("Good Afternoon!")   
+
+    else:
+        speak("Good Evening!")  
+
+    speak("I am zira. How may I help you")       
+
+def takeCommand():
+    #It takes microphone input from the user and returns string output
+
+
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")    
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {query}\n")
+
+    except Exception as e:
+        # print(e)    
+        print("Say that again please...")  
+        return "None"
+    return query
+
+#uses smtp server to send email
+#sender needs to allow less secure apps in gmail first(only sender)
+#https://myaccount.google.com/lesssecureapps use this link to allow less secure apps in gmail
+def sendEmail(to, content, your_email, your_pass):
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login(your_email, your_pass)
+    server.sendmail(your_email, to, content)
+    server.close()
+
+if __name__ == "__main__":
+    wishMe()
+    while True:
+        query = takeCommand().lower()
+
+        # Logic for executing tasks based on query
+        #search a particular word from wikipedia
+        if 'wikipedia' in query:
+            speak('Searching Wikipedia...')
+            query = query.replace("wikipedia", "")
+            results = wikipedia.summary(query, sentences=2)
+            speak("According to Wikipedia")
+            print(results)
+            speak(results)
+            speak("do you need more information??")
+            que = takeCommand().lower()
+            if 'yes' in que:
+                speak('how many sentences?')
+                sen = takeCommand().lower()
+                results = wikipedia.summary(query, sen)
+                speak("According to Wikipedia")
+                print(results)
+                speak(results)
+            else:
+                pass
+
+        elif 'open website' in query:
+            a = re.search('open website (.+)', query)
+            if a:
+                domain = a.group(1)
+                webbrowser.open('https://www.' + domain )
+            else:
+                pass  
+
+
+        elif 'stop' in query:
+            exit(0)
+
+        elif 'the time' in query:
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")    
+            speak(f"Sir, the time is {strTime}")
+
+        elif 'open code' in query:
+            codePath = "C:\\Users\\Haris\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
+            os.startfile(codePath)
+
+#for better results say your id and pass word by word (oprional)
+        elif 'email' in query:
+            try:
+                speak("email of recipent")
+                recipent_email = takeCommand()
+                if " " in recipent_email:
+                    to = recipent_email.replace(" ", "")
+                print(to)
+                speak("email of sender")
+                email = takeCommand()
+                if " " in email:
+                    your_email = email.replace(" ", "")
+                print(your_email)
+                speak("password of sender")
+                pwd = takeCommand()
+                if " " in pwd:
+                    your_pass = pwd.replace(" ", "")
+                print(your_pass)
+                speak("What should I say?")
+                content = takeCommand()
+
+                sendEmail(to, content, your_email, your_pass)
+                speak("Email has been sent!")
+            except Exception as e:
+                print(e)
+                speak("task incomplete!!!!")    
+        else:
+            try:
+                speak('searching...')
+                results = wikipedia.summary(query, sentences=2)
+                print(results)
+                speak(results)
+            except:
+                pass
